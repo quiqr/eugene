@@ -19,8 +19,6 @@ var FatalError = ""
 func SetCurrentSite(){
   var site_index int
   cfg, err := Read2()
-  //log.Printf("Eugene Config ERR: %# v", pretty.Formatter(err))
-  //log.Printf("Eugene Config: %# v", pretty.Formatter(cfg))
 
   if( err != nil){
     FatalError = "Can't read configfile"
@@ -39,16 +37,7 @@ func SetCurrentSite(){
 
   CurrentConfig = cfg
   CurrentSite = cfg.Sites[site_index]
-
-  /*
-  log.Printf("Eugene num sites: %d", len(cfg.Sites))
-  log.Printf("Eugene current site index from config: %d", (cfg.Current_Site+1))
-  log.Printf("Eugene current Site: %# v", pretty.Formatter(CurrentSite))
-  */
 }
-
-
-
 
 func Dir() string {
   cfgPath, _ := homedir.Expand(DefaultDir)

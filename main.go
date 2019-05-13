@@ -22,46 +22,12 @@ var (
   menuItemOpenConcept *systray.MenuItem
 )
 
-//var CurrentSite config.Site
-//var CurrentConfig config.ConfigMulti
-
-//var FatalError string
-
 func main() {
   config.SetCurrentSite()
   log.Printf("Eugene Config: %# v", pretty.Formatter(config.CurrentSite))
   systray.Run(onReady, onExit)
 }
 
-/*
-func SetCurrentSite(){
-  var site_index int
-  cfg, err := config.Read2()
-  //log.Printf("Eugene Config ERR: %# v", pretty.Formatter(err))
-
-  if( err != nil){
-    FatalError = "Can't read configfile"
- }
-
-  if(len(cfg.Sites) == 0){
-    FatalError = "No sites configured"
-    return
-  }
-
-  if(cfg.Current_Site >= len(cfg.Sites)){
-    site_index = 0
-  } else{
-    site_index = cfg.Current_Site
-  }
-
-  CurrentConfig = cfg
-  CurrentSite = cfg.Sites[site_index]
-
-  log.Printf("Eugene num sites: %d", len(cfg.Sites))
-  log.Printf("Eugene current site index from config: %d", (cfg.Current_Site+1))
-  log.Printf("Eugene current Site: %# v", pretty.Formatter(CurrentSite))
-}
-*/
 
 func setCurrentSiteMenu(){
 
