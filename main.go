@@ -4,40 +4,78 @@ import (
   "fmt"
   "time"
   "os/exec"
+  "log"
 
   "github.com/anjannath/systray"
   "hugo-control/assets"
   "hugo-control/config"
   "hugo-control/hugo"
+  "github.com/kr/pretty"
 )
 
 var (
-  menuTitles          = []string{"hugo 1", "hugo 2", "hugo 3"}
-  submenus            = make(map[string]*systray.MenuItem)
-  submenusToMenuItems = make(map[string]MenuAction)
+  siteSubmenus = make(map[string]*systray.MenuItem)
 )
 
+var CurrentSite config.Site
+var CurrentConfig config.ConfigMulti
+
+var FatalError string
+
 func main() {
+  FatalError = ""
+  SetCurrentSite()
   systray.Run(onReady, onExit)
   go forever()
 }
+
+func SetCurrentSite(){
+  var site_index int
+  cfg, err := config.Read2()
+  log.Printf("Eugene Config ERR: %# v", pretty.Formatter(err))
+  log.Printf("Eugene Config: %# v", pretty.Formatter(cfg))
+
+  if( err != nil){
+    FatalError = "Can't read Config"
+ }
+
+  if(len(cfg.Sites) == 0){
+    FatalError = "No sites configured"
+    return
+  }
+
+  if(cfg.Current_Site >= len(cfg.Sites)){
+    site_index = 0
+  } else{
+    site_index = cfg.Current_Site
+  }
+
+  CurrentConfig = cfg
+  CurrentSite = cfg.Sites[site_index]
+
+  /*
+  log.Printf("Eugene num sites: %d", len(cfg.Sites))
+  log.Printf("Eugene current site index from config: %d", (cfg.Current_Site+1))
+  log.Printf("Eugene current Site: %# v", pretty.Formatter(CurrentSite))
+  */
+}
+
 
 type MenuAction struct {
   start *systray.MenuItem
   stop  *systray.MenuItem
 }
 
-func onReady() {
+func renderMenu(){
   var e1 *systray.MenuItem
   var m0 *systray.MenuItem
-
-  //serverRunning := make(chan bool)
-
-  systray.SetIcon(images.MonoData)
 
   if ! config.ConfigFileExists() {
     e1 = systray.AddMenuItem("No config file","",0)
   }
+
+  var d0 *systray.MenuItem
+  d0 = systray.AddMenuItem(fmt.Sprintf("Test Eugene Config") , "", 0)
 
   cfg, err := config.Read()
   if err != nil {
@@ -62,7 +100,7 @@ func onReady() {
 
     go func() {
       for {
-        fmt.Printf("%v+\n", time.Now())
+        //fmt.Printf("%v+\n", time.Now())
         time.Sleep(time.Second)
         if hugo.HugoRunning(){
           toggleHugoServer.SetTitle("Stop Server")
@@ -75,11 +113,25 @@ func onReady() {
     }()
 
     systray.AddSeparator()
+
+    SM_SelectSite := systray.AddSubMenu("Select site")
+
+    for _, site := range CurrentConfig.Sites {
+      submenu := SM_SelectSite.AddSubMenuItem(site.Name,"", 0)
+      siteSubmenus[site.Name] = submenu
+
+    }
+
+
+
+    systray.AddSeparator()
     exit := systray.AddMenuItem("Quit", "", 0)
 
     go func() {
       for {
         select {
+        case <-d0.OnClickCh():
+
         case <-m0.OnClickCh():
           exec.Command("/usr/bin/open", cfg.LiveUrl).Output()
         case <-menuItemOpenConcept.OnClickCh():
@@ -98,6 +150,18 @@ func onReady() {
       }
     }()
   }
+
+}
+
+func onReady() {
+  fmt.Printf("OnReady: %v+\n", time.Now())
+  systray.SetIcon(images.MonoData)
+
+  if(FatalError != "") {
+    systray.AddMenuItem(FatalError,"",0)
+  } else {
+    renderMenu()
+  }
 }
 
 func onExit() {
@@ -106,7 +170,7 @@ func onExit() {
 
 func forever() {
   for {
-    fmt.Printf("%v+\n", time.Now())
-    time.Sleep(time.Second)
+    //fmt.Printf("%v+\n", time.Now())
+    //time.Sleep(time.Second)
   }
 }

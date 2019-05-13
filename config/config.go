@@ -3,6 +3,7 @@ package config
 import (
   "os"
   "path"
+  "log"
   "path/filepath"
   homedir "github.com/mitchellh/go-homedir"
   "github.com/spf13/viper"
@@ -10,6 +11,7 @@ import (
 
 const DefaultDir string = "~/.bitbar-hugo"
 const yamlFile = "config.yml"
+const yamlFile2 = "eugene-conf.yml"
 
 func Dir() string {
   cfgPath, _ := homedir.Expand(DefaultDir)
@@ -18,6 +20,10 @@ func Dir() string {
 
 func File() string {
   return path.Clean(filepath.Join(Dir(), yamlFile))
+}
+
+func File2() string {
+  return path.Clean(filepath.Join(Dir(), yamlFile2))
 }
 
 func ConfigDirExists() bool {
@@ -52,6 +58,27 @@ func EnsureConfigDir() error {
   return nil
 }
 
+// Read config from the specified dir returning a slice of OpenFaaS instances
+func Read2() (ConfigMulti, error) {
+
+  viper.SetConfigName("eugene-config")
+  viper.SetConfigFile(File2())
+  viper.SetConfigType("yaml")
+
+  err1 := viper.ReadInConfig()
+  if  err1 != nil {
+    log.Printf("err: %s\n", err1)
+  }
+
+  var config ConfigMulti
+  if err := viper.Unmarshal(&config); err != nil {
+    log.Printf("err2: %s\n", err)
+    return config, err
+  }
+
+  return config, nil
+
+}
 // Read config from the specified dir returning a slice of OpenFaaS instances
 func Read() (Config, error) {
 
