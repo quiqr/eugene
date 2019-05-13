@@ -1,6 +1,8 @@
 package main
 
 import (
+  "bytes"
+  "strings"
   "fmt"
   "time"
   "os/exec"
@@ -18,6 +20,7 @@ import (
 var (
   siteSubmenus = make(map[string]*systray.MenuItem)
   menuItemLiveUrl *systray.MenuItem
+  menuItemPublish *systray.MenuItem
   menuItemToggleHugoServer *systray.MenuItem
   menuItemOpenConcept *systray.MenuItem
   menuItemExit *systray.MenuItem
@@ -45,9 +48,13 @@ func setCurrentSiteMenu(){
     menuItemToggleHugoServer = systray.AddMenuItem("start lokale server", "", 0)
   }
 
+  //open Live Url
+  if (config.CurrentSite.Live_Url != "" && config.CurrentSite.Publishing_Command != "") {
+   menuItemPublish = systray.AddMenuItem(fmt.Sprintf("Publish to %s", config.CurrentSite.Live_Url ) , "", 0)
+  }
+
   //open concept versie
   menuItemOpenConcept = systray.AddMenuItem(fmt.Sprintf("Open %s in conceptversie", config.CurrentSite.Name), "", 0)
-
 }
 
 func switchSitesMenu(){
@@ -112,6 +119,20 @@ func listenToServer(){
   }()
 }
 
+func gitCommand(args ...string){
+  var errOut bytes.Buffer
+  c := exec.Command("/usr/bin/git", args...)
+  c.Dir = config.CurrentSite.Hugo_Output_Dir
+  c.Stderr = &errOut
+  out, err := c.Output()
+  outStr := strings.TrimSpace(string(out))
+  if err != nil {
+    err = fmt.Errorf("git: error=%q stderr=%s", err, string(errOut.Bytes()))
+  }
+  log.Printf("git args: %# v", pretty.Formatter(args))
+  log.Printf("Publish Result: %# v", pretty.Formatter(outStr))
+}
+
 func handleMenuClicks(){
   go func() {
     for {
@@ -119,6 +140,10 @@ func handleMenuClicks(){
 
       case <-menuItemLiveUrl.OnClickCh():
         exec.Command("/usr/bin/open", config.CurrentSite.Live_Url).Output()
+      case <-menuItemPublish.OnClickCh():
+        gitCommand("commit", "-m", "Published with Hugo Control", "-a")
+        gitCommand("push")
+
       case <-menuItemOpenConcept.OnClickCh():
         exec.Command("/usr/bin/open", "http://localhost:1313").Output()
       case <-menuItemToggleHugoServer.OnClickCh():

@@ -24,8 +24,6 @@ func HugoBinExists() bool {
 
 func HugoDir() string {
   return config.CurrentSite.Hugo_Src_Dir
-  //cfg,_ := config.Read()
-  //return cfg.HugoDir
 }
 
 func HugoBinPath() string {
@@ -33,7 +31,7 @@ func HugoBinPath() string {
 }
 
 func StartHugo() {
-  HugoServer = exec.Command(HugoBinPath(), "server","-D", "-s", HugoDir())
+  HugoServer = exec.Command(HugoBinPath(), "server","-D", "-d",config.CurrentSite.Hugo_Output_Dir, "-s", HugoDir())
   HugoServer.Start()
 }
 
@@ -43,7 +41,6 @@ func KillHugo()  {
       fmt.Println("failed to kill process: ")
     }
   } else {
-    //fmt.Println(pid)
     fmt.Println("trying alternative way to kill HUGO")
     exec.Command("bash", "-c", fmt.Sprintf("/bin/kill %s",HugoPid())).Output()
   }
