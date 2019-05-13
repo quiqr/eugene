@@ -18,7 +18,7 @@ var FatalError = ""
 
 func SetCurrentSite(){
   var site_index int
-  cfg, err := Read2()
+  cfg, err := Read()
 
   if( err != nil){
     FatalError = "Can't read configfile"
@@ -108,7 +108,7 @@ func EnsureConfigDir() error {
 }
 
 // Read config from the specified dir returning a slice of OpenFaaS instances
-func Read2() (ConfigMulti, error) {
+func Read() (ConfigMulti, error) {
 
   viper.SetConfigName("eugene-config")
   viper.SetConfigFile(File2())
@@ -133,6 +133,7 @@ func Read2() (ConfigMulti, error) {
 */
 
 // Read config from the specified dir returning a slice of OpenFaaS instances
+/*
 func Read() (Config, error) {
 
   viper.SetDefault("hugo_src_dir", "")
@@ -156,3 +157,4 @@ func Read() (Config, error) {
     return Config{}, err
   }
 }
+*/

@@ -1,10 +1,12 @@
 package config
 
+/*
 type Config struct {
   HugoDir string
   SiteName string
   LiveUrl  string
 }
+*/
 
 type ConfigMulti struct {
     Current_Site int

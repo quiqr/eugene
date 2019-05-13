@@ -20,6 +20,8 @@ var (
   menuItemLiveUrl *systray.MenuItem
   menuItemToggleHugoServer *systray.MenuItem
   menuItemOpenConcept *systray.MenuItem
+  menuItemExit *systray.MenuItem
+  menuSelectSite *systray.MenuItem
 )
 
 func main() {
@@ -27,7 +29,6 @@ func main() {
   log.Printf("Eugene Config: %# v", pretty.Formatter(config.CurrentSite))
   systray.Run(onReady, onExit)
 }
-
 
 func setCurrentSiteMenu(){
 
@@ -47,11 +48,31 @@ func setCurrentSiteMenu(){
   //open concept versie
   menuItemOpenConcept = systray.AddMenuItem(fmt.Sprintf("Open %s in conceptversie", config.CurrentSite.Name), "", 0)
 
-  systray.AddSeparator()
+}
 
+func switchSitesMenu(){
+  if(len(config.CurrentConfig.Sites)>1){
+    menuSelectSite = systray.AddSubMenu("Switch site")
+    for _, site := range config.CurrentConfig.Sites {
+      tmpSubmenuItem := menuSelectSite.AddSubMenuItem(site.Name,"", 0)
+      siteSubmenus[site.Name] = tmpSubmenuItem
+    }
 
-
-
+    for sName, sMenuItem := range siteSubmenus {
+      go func(name string, siteMenuitem *systray.MenuItem) {
+        for {
+          <-siteMenuitem.OnClickCh()
+          log.Println("Selecting %s", name)
+          config.FindSiteIndexByName(name)
+          config.SetCurrentSiteIndexByName(name)
+          if hugo.HugoRunning(){
+            hugo.KillHugo();
+          }
+          updateSiteMenu()
+        }
+      }(sName, sMenuItem)
+    }
+  }
 }
 
 func updateSiteMenu() {
@@ -67,33 +88,16 @@ func updateSiteMenu() {
 func renderMenu(){
 
   setCurrentSiteMenu()
-
-  menuSelectSite := systray.AddSubMenu("Switch site")
-
-  for _, site := range config.CurrentConfig.Sites {
-    tmpSubmenuItem := menuSelectSite.AddSubMenuItem(site.Name,"", 0)
-    siteSubmenus[site.Name] = tmpSubmenuItem
-  }
-
   systray.AddSeparator()
-  menuItemExit := systray.AddMenuItem("Quit", "", 0)
+  switchSitesMenu()
+  systray.AddSeparator()
+  menuItemExit = systray.AddMenuItem("Quit", "", 0)
 
-  for sName, sMenuItem := range siteSubmenus {
+  listenToServer()
+  handleMenuClicks()
+}
 
-    go func(name string, siteMenuitem *systray.MenuItem) {
-      for {
-        <-siteMenuitem.OnClickCh()
-        log.Println("Selecting %s", name)
-        config.FindSiteIndexByName(name)
-        config.SetCurrentSiteIndexByName(name)
-        if hugo.HugoRunning(){
-          hugo.KillHugo();
-        }
-        updateSiteMenu()
-      }
-    }(sName, sMenuItem)
-  }
-
+func listenToServer(){
   go func() {
     for {
       time.Sleep(time.Second)
@@ -106,8 +110,9 @@ func renderMenu(){
       }
     }
   }()
+}
 
-
+func handleMenuClicks(){
   go func() {
     for {
       select {
@@ -129,7 +134,6 @@ func renderMenu(){
       }
     }
   }()
-
 }
 
 func onReady() {

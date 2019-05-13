@@ -23,8 +23,9 @@ func HugoBinExists() bool {
 }
 
 func HugoDir() string {
-  cfg,_ := config.Read()
-  return cfg.HugoDir
+  return config.CurrentSite.Hugo_Src_Dir
+  //cfg,_ := config.Read()
+  //return cfg.HugoDir
 }
 
 func HugoBinPath() string {
