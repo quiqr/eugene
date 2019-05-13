@@ -12,13 +12,14 @@ import (
   "hugo-control/assets"
   "hugo-control/config"
   "hugo-control/hugo"
-//  "github.com/kr/pretty"
+  "github.com/kr/pretty"
 )
 
 var (
   siteSubmenus = make(map[string]*systray.MenuItem)
-  liveUrlMenuItem *systray.MenuItem
-  toggleHugoServerMenuItem *systray.MenuItem
+  menuItemLiveUrl *systray.MenuItem
+  menuItemToggleHugoServer *systray.MenuItem
+  menuItemOpenConcept *systray.MenuItem
 )
 
 //var CurrentSite config.Site
@@ -28,8 +29,8 @@ var (
 
 func main() {
   config.SetCurrentSite()
+  log.Printf("Eugene Config: %# v", pretty.Formatter(config.CurrentSite))
   systray.Run(onReady, onExit)
-  //go forever()
 }
 
 /*
@@ -37,7 +38,6 @@ func SetCurrentSite(){
   var site_index int
   cfg, err := config.Read2()
   //log.Printf("Eugene Config ERR: %# v", pretty.Formatter(err))
-  //log.Printf("Eugene Config: %# v", pretty.Formatter(cfg))
 
   if( err != nil){
     FatalError = "Can't read configfile"
@@ -67,14 +67,23 @@ func setCurrentSiteMenu(){
 
   //open Live Url
   if (config.CurrentSite.Live_Url != "") {
-   liveUrlMenuItem = systray.AddMenuItem(fmt.Sprintf("Open %s", config.CurrentSite.Live_Url ) , "", 0)
+   menuItemLiveUrl = systray.AddMenuItem(fmt.Sprintf("Open %s", config.CurrentSite.Live_Url ) , "", 0)
   }
 
   //start Server Concept
-
   //stop Server Concept
+  if hugo.HugoRunning(){
+    menuItemToggleHugoServer = systray.AddMenuItem("stop lokale server", "", 0)
+  } else {
+    menuItemToggleHugoServer = systray.AddMenuItem("start lokale server", "", 0)
+  }
 
   //open concept versie
+  menuItemOpenConcept = systray.AddMenuItem(fmt.Sprintf("Open %s in conceptversie", config.CurrentSite.Name), "", 0)
+
+  systray.AddSeparator()
+
+
 
 
 }
@@ -82,51 +91,18 @@ func setCurrentSiteMenu(){
 func updateSiteMenu() {
   //open Live Url
   if (config.CurrentSite.Live_Url != "") {
-   liveUrlMenuItem.SetTitle(fmt.Sprintf("Open %s", config.CurrentSite.Live_Url ))
+   menuItemLiveUrl.SetTitle(fmt.Sprintf("Open %s", config.CurrentSite.Live_Url ))
   }
 
-  //start Server Concept
-
-  //stop Server Concept
-
   //open concept versie
+  menuItemOpenConcept.SetTitle(fmt.Sprintf("Open %s in conceptversie", config.CurrentSite.Name))
 }
-
 
 func renderMenu(){
 
-  //var liveUrlMenuItem *systray.MenuItem
-  //d0 = systray.AddMenuItem(fmt.Sprintf("Test Eugene Config") , "", 0)
-
-  //cfg, err := config.Read()
-
   setCurrentSiteMenu()
-  updateSiteMenu()
 
-  if hugo.HugoRunning(){
-    toggleHugoServerMenuItem = systray.AddMenuItem("stop lokale server", "", 0)
-  } else {
-    toggleHugoServerMenuItem = systray.AddMenuItem("start lokale server", "", 0)
-  }
-
-  menuItemOpenConcept := systray.AddMenuItem(fmt.Sprintf("Open %s in conceptversie", config.CurrentSite.Name), "", 0)
-
-  go func() {
-    for {
-      time.Sleep(time.Second)
-      if hugo.HugoRunning(){
-        toggleHugoServerMenuItem.SetTitle("Stop Server")
-        menuItemOpenConcept.Enable()
-      } else{
-        toggleHugoServerMenuItem.SetTitle("Start Server")
-        menuItemOpenConcept.Disable()
-      }
-    }
-  }()
-
-  systray.AddSeparator()
-
-  menuSelectSite := systray.AddSubMenu("Select site")
+  menuSelectSite := systray.AddSubMenu("Switch site")
 
   for _, site := range config.CurrentConfig.Sites {
     tmpSubmenuItem := menuSelectSite.AddSubMenuItem(site.Name,"", 0)
@@ -134,7 +110,7 @@ func renderMenu(){
   }
 
   systray.AddSeparator()
-  exit := systray.AddMenuItem("Quit", "", 0)
+  menuItemExit := systray.AddMenuItem("Quit", "", 0)
 
   for sName, sMenuItem := range siteSubmenus {
 
@@ -144,6 +120,9 @@ func renderMenu(){
         log.Println("Selecting %s", name)
         config.FindSiteIndexByName(name)
         config.SetCurrentSiteIndexByName(name)
+        if hugo.HugoRunning(){
+          hugo.KillHugo();
+        }
         updateSiteMenu()
       }
     }(sName, sMenuItem)
@@ -151,21 +130,34 @@ func renderMenu(){
 
   go func() {
     for {
-      select {
-        //case <-d0.OnClickCh():
+      time.Sleep(time.Second)
+      if hugo.HugoRunning(){
+        menuItemToggleHugoServer.SetTitle("Stop Server")
+        menuItemOpenConcept.Enable()
+      } else{
+        menuItemToggleHugoServer.SetTitle("Start Server")
+        menuItemOpenConcept.Disable()
+      }
+    }
+  }()
 
-      case <-liveUrlMenuItem.OnClickCh():
+
+  go func() {
+    for {
+      select {
+
+      case <-menuItemLiveUrl.OnClickCh():
         exec.Command("/usr/bin/open", config.CurrentSite.Live_Url).Output()
       case <-menuItemOpenConcept.OnClickCh():
         exec.Command("/usr/bin/open", "http://localhost:1313").Output()
-      case <-toggleHugoServerMenuItem.OnClickCh():
+      case <-menuItemToggleHugoServer.OnClickCh():
         if hugo.HugoRunning(){
           hugo.KillHugo();
         } else{
           hugo.StartHugo();
           menuItemOpenConcept.Show()
         }
-      case <-exit.OnClickCh():
+      case <-menuItemExit.OnClickCh():
         systray.Quit()
         return
       }
@@ -186,12 +178,7 @@ func onReady() {
 }
 
 func onExit() {
-
-}
-
-func forever() {
-  for {
-    //fmt.Printf("%v+\n", time.Now())
-    //time.Sleep(time.Second)
+  if hugo.HugoRunning(){
+    hugo.KillHugo();
   }
 }

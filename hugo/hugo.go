@@ -9,7 +9,7 @@ import (
   "path/filepath"
 )
 
-var hugoServer = exec.Command(HugoBinPath(), "server","-D", "-s", HugoDir() )
+var HugoServer = exec.Command(HugoBinPath(), "server","-D", "-s", HugoDir() )
 
 func HugoBinExists() bool {
 
@@ -32,14 +32,19 @@ func HugoBinPath() string {
 }
 
 func StartHugo() {
-  hugoServer = exec.Command(HugoBinPath(), "server","-D", "-s", HugoDir())
-  hugoServer.Start()
+  HugoServer = exec.Command(HugoBinPath(), "server","-D", "-s", HugoDir())
+  HugoServer.Start()
 }
 
 func KillHugo()  {
-
-  if err := hugoServer.Process.Kill(); err != nil {
-    fmt.Println("failed to kill process: ")
+  if(HugoServer.Process != nil){
+    if err := HugoServer.Process.Kill(); err != nil {
+      fmt.Println("failed to kill process: ")
+    }
+  } else {
+    //fmt.Println(pid)
+    fmt.Println("trying alternative way to kill HUGO")
+    exec.Command("bash", "-c", fmt.Sprintf("/bin/kill %s",HugoPid())).Output()
   }
 }
 
