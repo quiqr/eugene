@@ -12,6 +12,43 @@ import (
 const DefaultDir string = "~/.bitbar-hugo"
 const yamlFile = "config.yml"
 const yamlFile2 = "eugene-conf.yml"
+var CurrentSite Site
+var CurrentConfig ConfigMulti
+var FatalError = ""
+
+func SetCurrentSite(){
+  var site_index int
+  cfg, err := Read2()
+  //log.Printf("Eugene Config ERR: %# v", pretty.Formatter(err))
+  //log.Printf("Eugene Config: %# v", pretty.Formatter(cfg))
+
+  if( err != nil){
+    FatalError = "Can't read configfile"
+  }
+
+  if(len(cfg.Sites) == 0){
+    FatalError = "No sites configured"
+    return
+  }
+
+  if(cfg.Current_Site >= len(cfg.Sites)){
+    site_index = 0
+  } else{
+    site_index = cfg.Current_Site
+  }
+
+  CurrentConfig = cfg
+  CurrentSite = cfg.Sites[site_index]
+
+  /*
+  log.Printf("Eugene num sites: %d", len(cfg.Sites))
+  log.Printf("Eugene current site index from config: %d", (cfg.Current_Site+1))
+  log.Printf("Eugene current Site: %# v", pretty.Formatter(CurrentSite))
+  */
+}
+
+
+
 
 func Dir() string {
   cfgPath, _ := homedir.Expand(DefaultDir)
@@ -44,6 +81,29 @@ func ConfigFileExists() bool {
   }
 }
 
+func FindSiteIndexByName(name string) int {
+
+  for index, site := range CurrentConfig.Sites {
+    //log.Println(site)
+    if(name == site.Name){
+      return index
+    }
+  }
+
+  return -1
+}
+
+func SetCurrentSiteIndexByName(name string){
+  newIndex := FindSiteIndexByName(name)
+  log.Println(newIndex)
+  if(newIndex >= 0){
+
+    CurrentConfig.Current_Site = newIndex
+    CurrentSite = CurrentConfig.Sites[newIndex]
+    //  log.Println(newIndex)
+    //   SetCurrentSite()
+  }
+}
 
 // EnsureConfigDir creates a configDir() if it doesn't already exist
 func EnsureConfigDir() error {
@@ -77,8 +137,12 @@ func Read2() (ConfigMulti, error) {
   }
 
   return config, nil
-
 }
+
+/*func Write() (error) {
+}
+*/
+
 // Read config from the specified dir returning a slice of OpenFaaS instances
 func Read() (Config, error) {
 
