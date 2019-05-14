@@ -8,14 +8,16 @@ import (
   "os/exec"
   "log"
 
-  //"github.com/anjannath/systray"
-  "../systray_sm_fork_pim"
+  "github.com/anjannath/systray"
+  //"../systray_sm_fork_pim"
 
   "hugo-control/assets"
   "hugo-control/config"
   "hugo-control/hugo"
   "github.com/kr/pretty"
 )
+
+const AppVersion = "0.0.2"
 
 var (
   siteSubmenus = make(map[string]*systray.MenuItem)
@@ -51,6 +53,8 @@ func setCurrentSiteMenu(){
   //open Live Url
   if (config.CurrentSite.Live_Url != "" && config.CurrentSite.Publishing_Command != "") {
    menuItemPublish = systray.AddMenuItem(fmt.Sprintf("Publish to %s", config.CurrentSite.Live_Url ) , "", 0)
+  } else{
+   menuItemPublish = systray.AddMenuItem(fmt.Sprintf("Config not complete for Publishing") , "", 0)
   }
 
   //open concept versie
@@ -90,15 +94,24 @@ func updateSiteMenu() {
 
   //open concept versie
   menuItemOpenConcept.SetTitle(fmt.Sprintf("Open %s in conceptversie", config.CurrentSite.Name))
+
+  //open Live Url
+  log.Println(config.CurrentSite.Publishing_Command)
+  if (config.CurrentSite.Live_Url != "" && config.CurrentSite.Publishing_Command != "") {
+   menuItemPublish.SetTitle(fmt.Sprintf("Publish to %s", config.CurrentSite.Live_Url ))
+  } else{
+   menuItemPublish.SetTitle(fmt.Sprintf("Conf not complete for Publishing"))
+   menuItemPublish.Disable()
+  }
 }
 
 func renderMenu(){
-
   setCurrentSiteMenu()
   systray.AddSeparator()
   switchSitesMenu()
   systray.AddSeparator()
   menuItemExit = systray.AddMenuItem("Quit", "", 0)
+  systray.AddMenuItem(fmt.Sprintf("Version: %s", AppVersion), "", 0)
 
   listenToServer()
   handleMenuClicks()
@@ -141,8 +154,12 @@ func handleMenuClicks(){
       case <-menuItemLiveUrl.OnClickCh():
         exec.Command("/usr/bin/open", config.CurrentSite.Live_Url).Output()
       case <-menuItemPublish.OnClickCh():
-        gitCommand("commit", "-m", "Published with Hugo Control", "-a")
-        gitCommand("push")
+
+        //open Live Url
+        if (config.CurrentSite.Live_Url != "" && config.CurrentSite.Publishing_Command != "") {
+          gitCommand("commit", "-m", "Published with Hugo Control", "-a")
+          gitCommand("push")
+        }
 
       case <-menuItemOpenConcept.OnClickCh():
         exec.Command("/usr/bin/open", "http://localhost:1313").Output()
