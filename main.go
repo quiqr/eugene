@@ -35,6 +35,64 @@ func main() {
   systray.Run(onReady, onExit)
 }
 
+func onReady() {
+  fmt.Printf("OnReady: %v+\n", time.Now())
+  systray.SetIcon(images.MonoData)
+
+  if(config.FatalError != "") {
+    systray.AddMenuItem(config.FatalError,"",0)
+  } else {
+    renderCMSMenu()
+  }
+
+  renderFooterMenu()
+}
+
+func onExit() {
+  if hugo.HugoRunning(){
+    hugo.KillHugo();
+  }
+}
+
+func renderCMSMenu(){
+
+  setCurrentSiteMenu()
+  systray.AddSeparator()
+  switchSitesMenu()
+  systray.AddSeparator()
+
+  listenToServer()
+  handleCMSMenuClicks()
+}
+
+func renderFooterMenu(){
+  menuItemExit = systray.AddMenuItem("Quit", "", 0)
+  systray.AddMenuItem(fmt.Sprintf("Version: %s", AppVersion), "", 0)
+  handleFooterMenuClicks()
+}
+
+func updateCMSMenu() {
+  //open Live Url
+  if (config.CurrentSite.Live_Url != "") {
+   menuItemLiveUrl.SetTitle(fmt.Sprintf("Open %s", config.CurrentSite.Live_Url ))
+  }
+
+  //open concept versie
+  menuItemOpenConcept.SetTitle(fmt.Sprintf("Open %s in conceptversie", config.CurrentSite.Name))
+
+  //open Live Url
+  log.Println(config.CurrentSite.Publishing_Command)
+  if (config.CurrentSite.Live_Url != "" && config.CurrentSite.Publishing_Command != "") {
+   menuItemPublish.SetTitle(fmt.Sprintf("Publish to %s", config.CurrentSite.Live_Url ))
+   menuItemPublish.Enable()
+  } else{
+   menuItemPublish.SetTitle(fmt.Sprintf("Conf not complete for Publishing"))
+   menuItemPublish.Disable()
+  }
+}
+
+
+
 func setCurrentSiteMenu(){
 
   //open Live Url
@@ -79,42 +137,11 @@ func switchSitesMenu(){
           if hugo.HugoRunning(){
             hugo.KillHugo();
           }
-          updateSiteMenu()
+          updateCMSMenu()
         }
       }(sName, sMenuItem)
     }
   }
-}
-
-func updateSiteMenu() {
-  //open Live Url
-  if (config.CurrentSite.Live_Url != "") {
-   menuItemLiveUrl.SetTitle(fmt.Sprintf("Open %s", config.CurrentSite.Live_Url ))
-  }
-
-  //open concept versie
-  menuItemOpenConcept.SetTitle(fmt.Sprintf("Open %s in conceptversie", config.CurrentSite.Name))
-
-  //open Live Url
-  log.Println(config.CurrentSite.Publishing_Command)
-  if (config.CurrentSite.Live_Url != "" && config.CurrentSite.Publishing_Command != "") {
-   menuItemPublish.SetTitle(fmt.Sprintf("Publish to %s", config.CurrentSite.Live_Url ))
-  } else{
-   menuItemPublish.SetTitle(fmt.Sprintf("Conf not complete for Publishing"))
-   menuItemPublish.Disable()
-  }
-}
-
-func renderMenu(){
-  setCurrentSiteMenu()
-  systray.AddSeparator()
-  switchSitesMenu()
-  systray.AddSeparator()
-  menuItemExit = systray.AddMenuItem("Quit", "", 0)
-  systray.AddMenuItem(fmt.Sprintf("Version: %s", AppVersion), "", 0)
-
-  listenToServer()
-  handleMenuClicks()
 }
 
 func listenToServer(){
@@ -146,7 +173,7 @@ func gitCommand(args ...string){
   log.Printf("Publish Result: %# v", pretty.Formatter(outStr))
 }
 
-func handleMenuClicks(){
+func handleCMSMenuClicks(){
   go func() {
     for {
       select {
@@ -170,6 +197,15 @@ func handleMenuClicks(){
           hugo.StartHugo();
           menuItemOpenConcept.Show()
         }
+      }
+    }
+  }()
+}
+
+func handleFooterMenuClicks(){
+  go func() {
+    for {
+      select {
       case <-menuItemExit.OnClickCh():
         systray.Quit()
         return
@@ -178,19 +214,3 @@ func handleMenuClicks(){
   }()
 }
 
-func onReady() {
-  fmt.Printf("OnReady: %v+\n", time.Now())
-  systray.SetIcon(images.MonoData)
-
-  if(config.FatalError != "") {
-    systray.AddMenuItem(config.FatalError,"",0)
-  } else {
-    renderMenu()
-  }
-}
-
-func onExit() {
-  if hugo.HugoRunning(){
-    hugo.KillHugo();
-  }
-}
