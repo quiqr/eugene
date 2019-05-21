@@ -17,7 +17,7 @@ import (
   "github.com/kr/pretty"
 )
 
-const AppVersion = "0.0.2"
+const AppVersion = "0.0.3"
 
 var (
   siteSubmenus = make(map[string]*systray.MenuItem)
@@ -27,6 +27,8 @@ var (
   menuItemOpenConcept *systray.MenuItem
   menuItemExit *systray.MenuItem
   menuSelectSite *systray.MenuItem
+  menuToggles *systray.MenuItem
+  menuConfig *systray.MenuItem
 )
 
 func main() {
@@ -58,9 +60,12 @@ func renderCMSMenu(){
 
   setCurrentSiteMenu()
   systray.AddSeparator()
+  stagingMenu()
   switchSitesMenu()
   systray.AddSeparator()
-
+  togglesMenu()
+  configMenu()
+  systray.AddSeparator()
   listenToServer()
   handleCMSMenuClicks()
 }
@@ -81,8 +86,8 @@ func updateCMSMenu() {
   menuItemOpenConcept.SetTitle(fmt.Sprintf("Open %s in conceptversie", config.CurrentSite.Name))
 
   //open Live Url
-  log.Println(config.CurrentSite.Publishing_Command)
-  if (config.CurrentSite.Live_Url != "" && config.CurrentSite.Publishing_Command != "") {
+  log.Println(config.CurrentSite.Live_Publishing_Command)
+  if (config.CurrentSite.Live_Url != "" && config.CurrentSite.Live_Publishing_Command != "") {
    menuItemPublish.SetTitle(fmt.Sprintf("Publish to %s", config.CurrentSite.Live_Url ))
    menuItemPublish.Enable()
   } else{
@@ -91,7 +96,10 @@ func updateCMSMenu() {
   }
 }
 
+func stagingMenu(){
 
+
+}
 
 func setCurrentSiteMenu(){
 
@@ -109,7 +117,7 @@ func setCurrentSiteMenu(){
   }
 
   //open Live Url
-  if (config.CurrentSite.Live_Url != "" && config.CurrentSite.Publishing_Command != "") {
+  if (config.CurrentSite.Live_Url != "" && config.CurrentSite.Live_Publishing_Command != "") {
    menuItemPublish = systray.AddMenuItem(fmt.Sprintf("Publish to %s", config.CurrentSite.Live_Url ) , "", 0)
   } else{
    menuItemPublish = systray.AddMenuItem(fmt.Sprintf("Config not complete for Publishing") , "", 0)
@@ -117,6 +125,57 @@ func setCurrentSiteMenu(){
 
   //open concept versie
   menuItemOpenConcept = systray.AddMenuItem(fmt.Sprintf("Open %s in conceptversie", config.CurrentSite.Name), "", 0)
+}
+
+func configMenu(){
+  menuConfig = systray.AddSubMenu("Configuration")
+  menuOpenConfigFile := menuConfig.AddSubMenuItem("Open configuration file","", 0)
+
+  go func() {
+    for {
+      select {
+
+      case <-menuOpenConfigFile.OnClickCh():
+        var errOut bytes.Buffer
+        c := exec.Command("/usr/bin/open", config.File2())
+        c.Dir = config.CurrentSite.Live_Hugo_Output_Dir
+        c.Stderr = &errOut
+        out, err := c.Output()
+        outStr := strings.TrimSpace(string(out))
+        if err != nil {
+          err = fmt.Errorf("open: error=%q stderr=%s", err, string(errOut.Bytes()))
+        }
+        log.Printf("open Result: %# v", pretty.Formatter(outStr))
+      }
+    }
+  }()
+}
+
+func togglesMenu(){
+  menuToggles = systray.AddSubMenu("Toggles")
+
+  menuToggleShowConcept := menuToggles.AddSubMenuItem("Show draft items","", 0)
+
+  go func() {
+    for {
+      select {
+
+      case <-menuToggleShowConcept.OnClickCh():
+
+        if(config.ShowDraftItems){
+          config.ShowDraftItems = false
+          menuToggleShowConcept.SetTitle("Hide draft items")
+
+        } else {
+          config.ShowDraftItems = true
+          menuToggleShowConcept.SetTitle("Show draft items")
+        }
+        if hugo.HugoRunning(){
+          hugo.KillHugo();
+        }
+      }
+    }
+  }()
 }
 
 func switchSitesMenu(){
@@ -162,7 +221,7 @@ func listenToServer(){
 func gitCommand(args ...string){
   var errOut bytes.Buffer
   c := exec.Command("/usr/bin/git", args...)
-  c.Dir = config.CurrentSite.Hugo_Output_Dir
+  c.Dir = config.CurrentSite.Live_Hugo_Output_Dir
   c.Stderr = &errOut
   out, err := c.Output()
   outStr := strings.TrimSpace(string(out))
@@ -183,7 +242,8 @@ func handleCMSMenuClicks(){
       case <-menuItemPublish.OnClickCh():
 
         //open Live Url
-        if (config.CurrentSite.Live_Url != "" && config.CurrentSite.Publishing_Command != "") {
+        if (config.CurrentSite.Live_Url != "" && config.CurrentSite.Live_Publishing_Command != "") {
+          gitCommand("add", ".")
           gitCommand("commit", "-m", "Published with Hugo Control", "-a")
           gitCommand("push")
         }

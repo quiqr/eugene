@@ -15,6 +15,8 @@ const yamlFile2 = "eugene-conf.yml"
 var CurrentSite Site
 var CurrentConfig ConfigMulti
 var FatalError = ""
+var ShowDraftItems bool
+
 
 func SetCurrentSite(){
   var site_index int
@@ -127,34 +129,3 @@ func Read() (ConfigMulti, error) {
 
   return config, nil
 }
-
-/*func Write() (error) {
-}
-*/
-
-// Read config from the specified dir returning a slice of OpenFaaS instances
-/*
-func Read() (Config, error) {
-
-  viper.SetDefault("hugo_src_dir", "")
-  viper.SetDefault("site_name", "website")
-  viper.SetDefault("live_url", "")
-
-  viper.SetConfigName("config")
-  viper.SetConfigFile(File())
-
-  err := viper.ReadInConfig()
-
-  viper.SetConfigType("yaml")
-
-  if err == nil {
-    return Config{
-      HugoDir: viper.Get("hugo_src_dir").(string),
-      SiteName: viper.Get("site_name").(string),
-      LiveUrl: viper.Get("live_url").(string),
-    }, nil
-  } else {
-    return Config{}, err
-  }
-}
-*/
