@@ -11,13 +11,13 @@ import (
   "github.com/anjannath/systray"
   //"../systray_sm_fork_pim"
 
-  "hugo-control/assets"
-  "hugo-control/config"
-  "hugo-control/hugo"
+  "eugene/assets"
+  "eugene/config"
+  "eugene/hugo"
   "github.com/kr/pretty"
 )
 
-const AppVersion = "0.0.3"
+const AppVersion = "0.0.4"
 
 var (
   siteSubmenus = make(map[string]*systray.MenuItem)
@@ -39,7 +39,7 @@ func main() {
 
 func onReady() {
   fmt.Printf("OnReady: %v+\n", time.Now())
-  systray.SetIcon(images.MonoData)
+  systray.SetIcon(images.EugeneMonoData)
 
   if(config.FatalError != "") {
     systray.AddMenuItem(config.FatalError,"",0)
@@ -71,8 +71,8 @@ func renderCMSMenu(){
 }
 
 func renderFooterMenu(){
-  menuItemExit = systray.AddMenuItem("Quit", "", 0)
   systray.AddMenuItem(fmt.Sprintf("Version: %s", AppVersion), "", 0)
+  menuItemExit = systray.AddMenuItem("Quit", "", 0)
   handleFooterMenuClicks()
 }
 

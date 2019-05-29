@@ -1,7 +1,7 @@
 package hugo
 
 import (
-  "hugo-control/config"
+  "eugene/config"
   "os"
   "os/exec"
   "fmt"
@@ -47,13 +47,13 @@ func KillHugo()  {
       fmt.Println("failed to kill process: ")
     }
   } else {
-    fmt.Println("trying alternative way to kill HUGO")
+    fmt.Println("trying alternative way to kill Hugo")
     exec.Command("bash", "-c", fmt.Sprintf("/bin/kill %s",HugoPid())).Output()
   }
 }
 
 func HugoPid() string {
-  out, _ := exec.Command("bash", "-c", "/bin/ps ax | /usr/bin/grep \"bitbar-hugo\\/hugo\"| /usr/bin/grep -v grep | /usr/bin/head -n1 | /usr/bin/cut -d\" \" -f 1").Output()
+  out, _ := exec.Command("bash", "-c", "/bin/ps ax | /usr/bin/grep \"eugene\\/hugo\"| /usr/bin/grep -v grep | /usr/bin/head -n1 | /usr/bin/cut -d\" \" -f 1").Output()
 
   pid := string(out)
   if fmt.Sprintf("%s", pid) != "<nil>" {

@@ -9,7 +9,7 @@ import (
   "github.com/spf13/viper"
 )
 
-const DefaultDir string = "~/.bitbar-hugo"
+const DefaultDir string = "~/.eugene"
 const yamlFile = "config.yml"
 const yamlFile2 = "eugene-conf.yml"
 var CurrentSite Site
