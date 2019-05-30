@@ -1,0 +1,23 @@
+---
+current_site: 1
+sites:
+
+  - name: Rusland1
+
+    hugo_src_dir: /Users/pim/RnD/rusland1.github.io-hugo
+
+    live_hugo_output_dir: /Users/pim/RnD/rusland1.github.io-public
+    live_url: https://www.rusland1.nl
+
+  - name: pimsnel.com
+
+    hugo_src_dir: /Users/pim/RnD/pimsnel.com-victor-hugo-2019/site
+
+    live_hugo_output_dir: /Users/pim/RnD/mipmip.github.io
+    live_url: https://www.pimsnel.com
+    live_publishing_command: git
+
+    staging_hugo_output_dir: /Users/pim/RnD/mipmip.github.io-staging
+    staging_url: https://togcagidus.sub.pimsnel.com
+    staging_publishing_script: rsync -av mipmip.github.io/ fo-usr-subpimsnelcom@droste.node.lingewoud.net:/var/www/sub.pimsnel.com/togcagidus/
+
