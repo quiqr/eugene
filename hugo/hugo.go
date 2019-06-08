@@ -33,13 +33,21 @@ func HugoBinPath() string {
 func StartHugo() {
 
   if(config.ShowDraftItems){
-    HugoServer = exec.Command(HugoBinPath(), "server", "-D", "-d",config.CurrentSite.Live_Hugo_Output_Dir, "-s", HugoDir())
+    HugoServer = exec.Command(HugoBinPath(), "server", "-D", "-d",config.CurrentSite.Hugo_Build_Dir, "-s", HugoDir())
   } else {
-    HugoServer = exec.Command(HugoBinPath(), "server", "-d", config.CurrentSite.Live_Hugo_Output_Dir, "-s", HugoDir())
+    HugoServer = exec.Command(HugoBinPath(), "server", "-d", config.CurrentSite.Hugo_Build_Dir, "-s", HugoDir())
   }
 
   HugoServer.Start()
 }
+
+func Build() {
+
+  HugoBuild := exec.Command(HugoBinPath(), "-d",config.CurrentSite.Hugo_Build_Dir, "-s", HugoDir())
+  HugoBuild.Start()
+}
+
+
 
 func KillHugo()  {
   if(HugoServer.Process != nil){

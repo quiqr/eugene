@@ -8,6 +8,7 @@ type ConfigMulti struct {
 type Site struct {
   Name string
   Hugo_Src_Dir string
+  Hugo_Build_Dir string
   Live_Hugo_Output_Dir string
   Live_Url string
   Live_Publishing_Command string

@@ -17,7 +17,7 @@ import (
   "github.com/kr/pretty"
 )
 
-const AppVersion = "0.0.4"
+const AppVersion = "0.0.5"
 
 var (
   siteSubmenus = make(map[string]*systray.MenuItem)
@@ -232,6 +232,19 @@ func gitCommand(args ...string){
   log.Printf("Publish Result: %# v", pretty.Formatter(outStr))
 }
 
+func rsyncBuildTo(dest_dir string){
+  var errOut bytes.Buffer
+  c := exec.Command("/usr/bin/rsync", "-av", config.CurrentSite.Hugo_Build_Dir + "/", config.CurrentSite.Live_Hugo_Output_Dir + "/")
+  c.Dir = config.CurrentSite.Live_Hugo_Output_Dir
+  c.Stderr = &errOut
+  out, err := c.Output()
+  outStr := strings.TrimSpace(string(out))
+  if err != nil {
+    err = fmt.Errorf("git: error=%q stderr=%s", err, string(errOut.Bytes()))
+  }
+  log.Printf("Rsync Result: %# v", pretty.Formatter(outStr))
+}
+
 func handleCMSMenuClicks(){
   go func() {
     for {
@@ -243,6 +256,14 @@ func handleCMSMenuClicks(){
 
         //open Live Url
         if (config.CurrentSite.Live_Url != "" && config.CurrentSite.Live_Publishing_Command != "") {
+
+          fmt.Println("Building Hugo")
+          hugo.Build();
+
+          fmt.Println("Rsyncing Build to Output dir")
+          rsyncBuildTo(config.CurrentSite.Live_Hugo_Output_Dir)
+
+          fmt.Println("Git commands")
           gitCommand("add", ".")
           gitCommand("commit", "-m", "Published with Hugo Control", "-a")
           gitCommand("push")

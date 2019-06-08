@@ -1,0 +1,7 @@
+---
+current_site: 1
+sites:
+  - name: Eugene Website
+    hugo_src_dir: /Users/pim/RnD/eugene.github.io-hugo
+    live_hugo_output_dir: /Users/pim/RnD/eugene.github.io-public
+    live_url: https://eugene.github.io
