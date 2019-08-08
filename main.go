@@ -27,8 +27,9 @@ var (
   menuItemOpenConcept *systray.MenuItem
   menuItemExit *systray.MenuItem
   menuSelectSite *systray.MenuItem
-  menuToggles *systray.MenuItem
   menuConfig *systray.MenuItem
+  menuToggles *systray.MenuItem
+  menuToggleShowConcept *systray.MenuItem
 )
 
 func main() {
@@ -39,6 +40,7 @@ func main() {
 
 func onReady() {
   fmt.Printf("OnReady: %v+\n", time.Now())
+  hugo.RestartHugo()
   systray.SetIcon(images.EugeneMonoData)
 
   if(config.FatalError != "") {
@@ -153,8 +155,8 @@ func configMenu(){
 
 func togglesMenu(){
   menuToggles = systray.AddSubMenu("Toggles")
-
-  menuToggleShowConcept := menuToggles.AddSubMenuItem("Show draft items","", 0)
+  menuToggleShowConcept = menuToggles.AddSubMenuItem("Toggle draft items","", 0)
+  updateTogglesMenu()
 
   go func() {
     for {
@@ -164,19 +166,24 @@ func togglesMenu(){
 
         if(config.ShowDraftItems){
           config.ShowDraftItems = false
-          menuToggleShowConcept.SetTitle("Hide draft items")
-
         } else {
           config.ShowDraftItems = true
-          menuToggleShowConcept.SetTitle("Show draft items")
         }
-        if hugo.HugoRunning(){
-          hugo.KillHugo();
-        }
+        hugo.RestartHugo()
+        updateTogglesMenu()
       }
     }
   }()
 }
+
+func updateTogglesMenu(){
+  if(config.ShowDraftItems){
+    menuToggleShowConcept.SetTitle("Hide draft items")
+  } else {
+    menuToggleShowConcept.SetTitle("Show draft items")
+  }
+}
+
 
 func switchSitesMenu(){
   if(len(config.CurrentConfig.Sites)>1){
@@ -193,15 +200,16 @@ func switchSitesMenu(){
           log.Println("Selecting %s", name)
           config.FindSiteIndexByName(name)
           config.SetCurrentSiteIndexByName(name)
-          if hugo.HugoRunning(){
-            hugo.KillHugo();
-          }
+
+          hugo.RestartHugo();
+
           updateCMSMenu()
         }
       }(sName, sMenuItem)
     }
   }
 }
+
 
 func listenToServer(){
   go func() {

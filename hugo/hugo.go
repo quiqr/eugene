@@ -5,6 +5,7 @@ import (
   "os"
   "os/exec"
   "fmt"
+  "time"
   "path"
   "path/filepath"
 )
@@ -47,8 +48,6 @@ func Build() {
   HugoBuild.Start()
 }
 
-
-
 func KillHugo()  {
   if(HugoServer.Process != nil){
     if err := HugoServer.Process.Kill(); err != nil {
@@ -56,9 +55,24 @@ func KillHugo()  {
     }
   } else {
     fmt.Println("trying alternative way to kill Hugo")
-    exec.Command("bash", "-c", fmt.Sprintf("/bin/kill %s",HugoPid())).Output()
+    exec.Command("bash", "-c", fmt.Sprintf("/bin/kill %s", HugoPid())).Output()
+    exec.Command("bash", "-c", "/bin/killall -9 hugo").Output()
   }
 }
+
+func RestartHugo(){
+  fmt.Println("restarting Hugo")
+  if HugoRunning(){
+    KillHugo()
+    fmt.Println("  stopped Hugo")
+  }
+
+  time.Sleep(3 * time.Second)
+  StartHugo()
+  fmt.Println("  started Hugo")
+
+}
+
 
 func HugoPid() string {
   out, _ := exec.Command("bash", "-c", "/bin/ps ax | /usr/bin/grep \"eugene\\/hugo\"| /usr/bin/grep -v grep | /usr/bin/head -n1 | /usr/bin/cut -d\" \" -f 1").Output()
